@@ -8,11 +8,12 @@ public class PlayerController : MonoBehaviour
 
     [Header("Détection du sol")]
     public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
+    public float groundCheckRadius = 1f;
     public LayerMask groundLayer;
 
     private Rigidbody2D rb;
     private Animator animator;
+    private SpriteRenderer spriteRenderer;
     private bool isGrounded;
     private float moveInput;
     private bool facingRight = true;
@@ -21,36 +22,36 @@ public class PlayerController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteRenderer.flipX = false;
     }
 
     void Update()
     {
-        // Déplacement horizontal
         moveInput = Input.GetAxisRaw("Horizontal");
+
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, ~LayerMask.GetMask("Player"));
+
         rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
-        // Vérifier si au sol
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
-        // Saut
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            animator.SetTrigger("Jump");
         }
 
-        // Flip du sprite
         if (moveInput > 0 && !facingRight) Flip();
         if (moveInput < 0 && facingRight) Flip();
 
-        // Animations
         animator.SetFloat("Speed", Mathf.Abs(moveInput));
         animator.SetBool("IsGrounded", isGrounded);
-        animator.SetFloat("VerticalVelocity", rb.linearVelocity.y);
+        animator.SetBool("IsTurning", false);
+        animator.SetBool("IsMovingLeft", false);
     }
 
     void Flip()
     {
         facingRight = !facingRight;
-        transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
+        spriteRenderer.flipX = !facingRight;
     }
 }
